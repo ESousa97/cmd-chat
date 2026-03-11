@@ -79,8 +79,11 @@ cmd_chat serve 127.0.0.1 5000 -p "senha_super_secreta"
 Em um terminal separado (para o cliente), excute:
 
 ```bash
-cmd_chat connect 127.0.0.1 5000 MeuNomeUsuario "senha_super_secreta"
+cmd_chat connect 127.0.0.1 5000 "senha_super_secreta"
 ```
+
+O `cmd-chat` agora gera automaticamente um nome de usuário aleatório para você (ex: `SmartFox52`, `BraveLion12`, etc.) ao ingressar no servidor!
+
 Você agora está no chat! Digite suas mensagens e inicie a conversa. 
 
 ## Scripts Disponíveis
