@@ -1,0 +1,36 @@
+name: Bug Report
+description: Report a bug to help us improve cmd-chat
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: version
+    attributes:
+      label: Python & Package Version
+      description: Which version of Python and secured_console_chat are you using?
+      placeholder: ex. Python 3.10.x, cmd-chat v1.1.22
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Run '...'
+        2. Set password '...'
+        3. Connect using '...'
+    validations:
+      required: true

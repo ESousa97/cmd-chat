@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-class CryptoService(ABC):
 
+class CryptoService(ABC):
     @abstractmethod
     def _encrypt(self, message: str) -> str:
         raise NotImplementedError("Need to implement encrypt method")

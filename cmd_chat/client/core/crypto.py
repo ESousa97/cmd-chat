@@ -1,5 +1,5 @@
-import rsa
 import requests
+import rsa
 from cryptography.fernet import Fernet
 
 from cmd_chat.client.core.abs.abs_crypto import CryptoService

@@ -1,26 +1,23 @@
-import os 
+import os
 import platform
 
-from cmd_chat.client.core.abs.abs_renderer import ClientRenderer
-from cmd_chat.client.config import COLORS
-
 from colorama import init
+
+from cmd_chat.client.config import COLORS
+from cmd_chat.client.core.abs.abs_renderer import ClientRenderer
 
 init()
 
 
 class DefaultClientRenderer(ClientRenderer):
-
     def __get_os(self) -> str:
-        """ checking what kind of platform you need
-        """
+        """checking what kind of platform you need"""
         if "Linux" in str(platform.platform()):
             return "Linux"
         return "Windows"
 
     def print_message(self, message: str) -> str:
-        """ generating string with message in required format
-        """
+        """generating string with message in required format"""
         # split only on the first ':' to keep message contents intact
         parts = message.split(":", 1)
         if parts[0] == self.username:
@@ -35,18 +32,12 @@ class DefaultClientRenderer(ClientRenderer):
         else:
             os.system("cls")
 
-    def print_ip(
-        self,
-        ip: str
-    ) -> str:
-        return f"IP: " + COLORS["ip_color"] + ip + COLORS["text_color"]
-    
-    def print_username(
-        self,
-        username: str
-    ) -> str:
+    def print_ip(self, ip: str) -> str:
+        return "IP: " + COLORS["ip_color"] + ip + COLORS["text_color"]
+
+    def print_username(self, username: str) -> str:
         # Username label + colored username
-        return f"USERNAME: " + COLORS["username_color"] + username + COLORS["text_color"]
+        return "USERNAME: " + COLORS["username_color"] + username + COLORS["text_color"]
 
     def print_chat(self, response) -> None:
         for i, msg in enumerate(response["messages"]):

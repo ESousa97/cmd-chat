@@ -1,16 +1,18 @@
 import asyncio
+import json
+from functools import partial
+
 import rsa
 from cryptography.fernet import Fernet
-from functools import partial
-from sanic.worker.loader import AppLoader
+from sanic import Request, Sanic, Websocket, response
 from sanic.response import HTTPResponse
-from sanic import Sanic, Request, response, Websocket
-from cmd_chat.server.models import Message
+from sanic.worker.loader import AppLoader
+
+from cmd_chat.server.models import IncomingMessage, Message
 from cmd_chat.server.services import (
-    _get_bytes_and_serialize,
-    _check_ws_for_close_status,
     _generate_new_message,
-    _generate_update_payload
+    _generate_update_payload,
+    _get_bytes_and_serialize,
 )
 
 app = Sanic("app")
@@ -18,7 +20,7 @@ app.config.OAS = False
 
 MESSAGES_MEMORY_DB: list[Message] = []
 USERS: dict[str, str] = {}
-PUBLIC_KEY = Fernet.generate_key()
+SHARED_SYMMETRIC_KEY = Fernet.generate_key()
 
 
 def _check_password(request: Request, expected: str | None) -> bool:
@@ -28,8 +30,10 @@ def _check_password(request: Request, expected: str | None) -> bool:
     f = request.form.get("password") if hasattr(request, "form") else None
     return (q or f) == expected
 
+
 def _get_str_arg(request: Request, name: str) -> str | None:
     return request.form.get(name) or request.args.get(name)
+
 
 def attach_endpoints(app: Sanic):
     @app.websocket("/talk")
@@ -38,14 +42,17 @@ def attach_endpoints(app: Sanic):
             await ws.close(code=4001, reason="unauthorized")
             return
         while True:
-            serialized_message: dict = await _get_bytes_and_serialize(ws)
-            await _check_ws_for_close_status(serialized_message, ws)
-            text = serialized_message.get("text")
+            incoming: IncomingMessage = await _get_bytes_and_serialize(ws)
+            if incoming.action == "close":
+                await ws.close()
+                break
+
+            text = incoming.text
             if text is None:
                 continue
             new_message = await _generate_new_message(text)
             MESSAGES_MEMORY_DB.append(new_message)
-            await ws.send(str({"status": "ok"}))
+            await ws.send(json.dumps({"status": "ok"}))
             await asyncio.sleep(0.2)
 
     @app.websocket("/update")
@@ -58,7 +65,7 @@ def attach_endpoints(app: Sanic):
             await ws.send(payload.encode())
             await asyncio.sleep(0.2)
 
-    @app.route('/get_key', methods=['GET', 'POST'])
+    @app.route("/get_key", methods=["GET", "POST"])
     async def get_key_view(request: Request) -> HTTPResponse:
         if not _check_password(request, app.ctx.ADMIN_PASSWORD):
             return response.text("unauthorized", status=401)
@@ -89,12 +96,12 @@ def attach_endpoints(app: Sanic):
         except Exception as e:
             return response.text(f"bad pubkey: {e}", status=400)
 
-        encrypted_data = rsa.encrypt(PUBLIC_KEY, public_key)
+        encrypted_data = rsa.encrypt(SHARED_SYMMETRIC_KEY, public_key)
 
         username = _get_str_arg(request, "username") or "unknown"
         user_key = f"{request.ip}, {username}"
         if user_key not in USERS:
-            USERS[user_key] = PUBLIC_KEY
+            USERS[user_key] = SHARED_SYMMETRIC_KEY
 
         return response.raw(encrypted_data)
 

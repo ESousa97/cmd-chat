@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secured_console_chat"
+version = "1.1.22"
+description = "Secured console chat with RSA & Fernet"
+readme = "README.md"
+authors = [
+    { name = "dinosaurtirex", email = "sneakybeaky18@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "sanic>=23.12.0",
+    "requests",
+    "rsa",
+    "cryptography",
+    "colorama",
+    "pydantic",
+    "websocket-client",
+    "flask",
+    "rich"
+]
+
+[project.scripts]
+cmd_chat = "cmd_chat:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "C4", "UP", "RUF"]
+ignore = ["E501"] # Line length let formatter deal with it
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+pythonpath = ["."]
+testpaths = [
+    "tests",
+]

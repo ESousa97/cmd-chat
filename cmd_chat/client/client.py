@@ -1,25 +1,16 @@
-import ast
-import time
+import json
 import threading
+import time
 
-from websocket import create_connection, WebSocketConnectionClosedException
-
-from cmd_chat.client.core.crypto import RSAService
-from cmd_chat.client.core.default_renderer import DefaultClientRenderer
-from cmd_chat.client.core.rich_renderer import RichClientRenderer
+from websocket import WebSocketConnectionClosedException, create_connection
 
 from cmd_chat.client.config import RENDER_TIME
+from cmd_chat.client.core.crypto import RSAService
+from cmd_chat.client.core.rich_renderer import RichClientRenderer
 
 
 class Client(RSAService, RichClientRenderer):
-
-    def __init__(
-        self,
-        server: str,
-        port: int,
-        username: str,
-        password: str | None = None
-    ):
+    def __init__(self, server: str, port: int, username: str, password: str | None = None):
         super().__init__()
         self.server = server
         self.port = port
@@ -27,10 +18,7 @@ class Client(RSAService, RichClientRenderer):
         self.password = password or ""
         self.base_url = f"http://{self.server}:{self.port}"
         self.ws_url = f"ws://{self.server}:{self.port}"
-        self.close_response = str({
-            "action": "close",
-            "username": self.username
-        })
+        self.close_response = json.dumps({"action": "close", "username": self.username})
         self.__stop_threads = False
 
     def _ws_full(self, path: str) -> str:
@@ -45,7 +33,7 @@ class Client(RSAService, RichClientRenderer):
                 return create_connection(self._ws_full(path))
             except Exception as exc:
                 last_exc = exc
-                time.sleep(backoff * (2 ** attempt))
+                time.sleep(backoff * (2**attempt))
         print(f"Can't connect to {path}: {last_exc}")
         raise last_exc
 
@@ -64,13 +52,17 @@ class Client(RSAService, RichClientRenderer):
                         except Exception:
                             pass
                         break
-                    message = f'{self.username}: {user_input}'
-                    socket_message = str({
-                        "text": self._encrypt(message),
-                        "username": self.username
-                    })
+                    message = f"{self.username}: {user_input}"
+                    socket_message = json.dumps(
+                        {"text": self._encrypt(message), "username": self.username}
+                    )
                     ws.send(socket_message)
-                except (WebSocketConnectionClosedException, ConnectionResetError, ConnectionAbortedError, OSError):
+                except (
+                    WebSocketConnectionClosedException,
+                    ConnectionResetError,
+                    ConnectionAbortedError,
+                    OSError,
+                ):
                     try:
                         if ws:
                             try:
@@ -107,14 +99,19 @@ class Client(RSAService, RichClientRenderer):
                     raw = ws.recv()
                     if isinstance(raw, bytes):
                         raw = raw.decode("utf-8")
-                    response = ast.literal_eval(raw)
+                    response = json.loads(raw)
                     if last_try == response:
                         continue
                     last_try = response
                     self.clear_console()
                     if len(last_try["messages"]) > 0:
                         self.print_chat(response=last_try)
-                except (WebSocketConnectionClosedException, ConnectionResetError, ConnectionAbortedError, OSError):
+                except (
+                    WebSocketConnectionClosedException,
+                    ConnectionResetError,
+                    ConnectionAbortedError,
+                    OSError,
+                ):
                     try:
                         if ws:
                             try:
@@ -143,9 +140,7 @@ class Client(RSAService, RichClientRenderer):
 
     def _validate_keys(self) -> None:
         self._request_key(
-            url=f"{self.base_url}/get_key",
-            username=self.username,
-            password=self.password
+            url=f"{self.base_url}/get_key", username=self.username, password=self.password
         )
         self._remove_keys()
 
@@ -153,7 +148,7 @@ class Client(RSAService, RichClientRenderer):
         self._validate_keys()
         threads = [
             threading.Thread(target=self.send_info, daemon=True),
-            threading.Thread(target=self.update_info, daemon=True)
+            threading.Thread(target=self.update_info, daemon=True),
         ]
         for th in threads:
             th.start()
