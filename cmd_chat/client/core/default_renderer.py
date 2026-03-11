@@ -1,4 +1,3 @@
-
 from colorama import init
 
 from cmd_chat.client.config import COLORS
