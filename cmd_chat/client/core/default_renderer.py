@@ -1,5 +1,3 @@
-import os
-import platform
 
 from colorama import init
 
@@ -10,12 +8,6 @@ init()
 
 
 class DefaultClientRenderer(ClientRenderer):
-    def __get_os(self) -> str:
-        """checking what kind of platform you need"""
-        if "Linux" in str(platform.platform()):
-            return "Linux"
-        return "Windows"
-
     def print_message(self, message: str) -> str:
         """generating string with message in required format"""
         # split only on the first ':' to keep message contents intact
@@ -25,12 +17,8 @@ class DefaultClientRenderer(ClientRenderer):
         return parts[0] + ": " + parts[1] + COLORS["text_color"]
 
     def clear_console(self):
-        # For windows clear command its cls
-        # For linux clear command its clear
-        if self.__get_os() == "Linux":
-            os.system("clear")
-        else:
-            os.system("cls")
+        # ANSI escape sequence to clear screen and move cursor to top left
+        print("\033[H\033[2J", end="", flush=True)
 
     def print_ip(self, ip: str) -> str:
         return "IP: " + COLORS["ip_color"] + ip + COLORS["text_color"]
