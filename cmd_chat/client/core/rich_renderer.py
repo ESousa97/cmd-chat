@@ -1,4 +1,3 @@
-import os
 import platform
 
 from rich.console import Console
@@ -35,12 +34,7 @@ class RichClientRenderer(ClientRenderer):
         )
 
     def clear_console(self):
-        # For windows clear command its cls
-        # For linux clear command its clear
-        if self.__get_os() == "Linux":
-            os.system("clear")
-        else:
-            os.system("cls")
+        console.clear()
 
     def print_ip(self, ip: str) -> str:
         return ip

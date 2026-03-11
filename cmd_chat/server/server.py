@@ -35,75 +35,79 @@ def _get_str_arg(request: Request, name: str) -> str | None:
     return request.form.get(name) or request.args.get(name)
 
 
+async def _handle_talk_ws(request: Request, ws: Websocket) -> None:
+    if not _check_password(request, app.ctx.ADMIN_PASSWORD):
+        await ws.close(code=4001, reason="unauthorized")
+        return
+    while True:
+        incoming: IncomingMessage = await _get_bytes_and_serialize(ws)
+        if incoming.action == "close":
+            await ws.close()
+            break
+
+        text = incoming.text
+        if text is None:
+            continue
+        new_message = await _generate_new_message(text)
+        MESSAGES_MEMORY_DB.append(new_message)
+        await ws.send(json.dumps({"status": "ok"}))
+        await asyncio.sleep(0.2)
+
+
+async def _handle_update_ws(request: Request, ws: Websocket) -> None:
+    if not _check_password(request, app.ctx.ADMIN_PASSWORD):
+        await ws.close(code=4001, reason="unauthorized")
+        return
+    while True:
+        payload = await _generate_update_payload(MESSAGES_MEMORY_DB, USERS)
+        await ws.send(payload.encode())
+        await asyncio.sleep(0.2)
+
+
+async def _handle_get_key(request: Request) -> HTTPResponse:
+    if not _check_password(request, app.ctx.ADMIN_PASSWORD):
+        return response.text("unauthorized", status=401)
+
+    pubkey_bytes: bytes | None = None
+
+    if "pubkey" in request.files and request.files.get("pubkey"):
+        f = request.files.get("pubkey")
+        if isinstance(f, list):
+            f = f[0]
+        pubkey_bytes = f.body
+
+    if pubkey_bytes is None:
+        raw = request.form.get("pubkey")
+        if raw:
+            pubkey_bytes = raw if isinstance(raw, bytes) else str(raw).encode()
+
+    if pubkey_bytes is None:
+        raw = request.args.get("pubkey")
+        if raw:
+            pubkey_bytes = raw.encode()
+
+    if not pubkey_bytes:
+        return response.text("bad request: pubkey is required", status=400)
+
+    try:
+        public_key = rsa.PublicKey.load_pkcs1(pubkey_bytes)
+    except Exception as e:
+        return response.text(f"bad pubkey: {e}", status=400)
+
+    encrypted_data = rsa.encrypt(SHARED_SYMMETRIC_KEY, public_key)
+
+    username = _get_str_arg(request, "username") or "unknown"
+    user_key = f"{request.ip}, {username}"
+    if user_key not in USERS:
+        USERS[user_key] = SHARED_SYMMETRIC_KEY
+
+    return response.raw(encrypted_data)
+
+
 def attach_endpoints(app: Sanic):
-    @app.websocket("/talk")
-    async def talk_ws_view(request: Request, ws: Websocket) -> HTTPResponse:
-        if not _check_password(request, app.ctx.ADMIN_PASSWORD):
-            await ws.close(code=4001, reason="unauthorized")
-            return
-        while True:
-            incoming: IncomingMessage = await _get_bytes_and_serialize(ws)
-            if incoming.action == "close":
-                await ws.close()
-                break
-
-            text = incoming.text
-            if text is None:
-                continue
-            new_message = await _generate_new_message(text)
-            MESSAGES_MEMORY_DB.append(new_message)
-            await ws.send(json.dumps({"status": "ok"}))
-            await asyncio.sleep(0.2)
-
-    @app.websocket("/update")
-    async def update_ws_view(request: Request, ws: Websocket) -> HTTPResponse:
-        if not _check_password(request, app.ctx.ADMIN_PASSWORD):
-            await ws.close(code=4001, reason="unauthorized")
-            return
-        while True:
-            payload = await _generate_update_payload(MESSAGES_MEMORY_DB, USERS)
-            await ws.send(payload.encode())
-            await asyncio.sleep(0.2)
-
-    @app.route("/get_key", methods=["GET", "POST"])
-    async def get_key_view(request: Request) -> HTTPResponse:
-        if not _check_password(request, app.ctx.ADMIN_PASSWORD):
-            return response.text("unauthorized", status=401)
-
-        pubkey_bytes: bytes | None = None
-
-        if "pubkey" in request.files and request.files.get("pubkey"):
-            f = request.files.get("pubkey")
-            if isinstance(f, list):
-                f = f[0]
-            pubkey_bytes = f.body
-
-        if pubkey_bytes is None:
-            raw = request.form.get("pubkey")
-            if raw:
-                pubkey_bytes = raw if isinstance(raw, bytes) else str(raw).encode()
-
-        if pubkey_bytes is None:
-            raw = request.args.get("pubkey")
-            if raw:
-                pubkey_bytes = raw.encode()
-
-        if not pubkey_bytes:
-            return response.text("bad request: pubkey is required", status=400)
-
-        try:
-            public_key = rsa.PublicKey.load_pkcs1(pubkey_bytes)
-        except Exception as e:
-            return response.text(f"bad pubkey: {e}", status=400)
-
-        encrypted_data = rsa.encrypt(SHARED_SYMMETRIC_KEY, public_key)
-
-        username = _get_str_arg(request, "username") or "unknown"
-        user_key = f"{request.ip}, {username}"
-        if user_key not in USERS:
-            USERS[user_key] = SHARED_SYMMETRIC_KEY
-
-        return response.raw(encrypted_data)
+    app.add_websocket_route(_handle_talk_ws, "/talk")
+    app.add_websocket_route(_handle_update_ws, "/update")
+    app.add_route(_handle_get_key, "/get_key", methods=["GET", "POST"])
 
 
 def create_app(app_name: str, admin_password: str | None) -> Sanic:

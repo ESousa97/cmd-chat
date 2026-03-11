@@ -1,3 +1,4 @@
+import contextlib
 import json
 import threading
 import time
@@ -45,12 +46,10 @@ class Client(RSAService, RichClientRenderer):
                     user_input = input("You're message: ")
                     if user_input == "q":
                         self.__stop_threads = True
-                        try:
+                        with contextlib.suppress(Exception):
                             if ws:
                                 ws.send(self.close_response)
                                 ws.close()
-                        except Exception:
-                            pass
                         break
                     message = f"{self.username}: {user_input}"
                     socket_message = json.dumps(
@@ -65,10 +64,8 @@ class Client(RSAService, RichClientRenderer):
                 ):
                     try:
                         if ws:
-                            try:
+                            with contextlib.suppress(Exception):
                                 ws.close()
-                            except Exception:
-                                pass
                         ws = self._connect_ws("/talk")
                         continue
                     except Exception:
@@ -77,17 +74,13 @@ class Client(RSAService, RichClientRenderer):
                         break
                 except KeyboardInterrupt:
                     self.__stop_threads = True
-                    try:
+                    with contextlib.suppress(Exception):
                         ws.send(self.close_response)
                         ws.close()
-                    except Exception:
-                        pass
                     break
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 ws.close()
-            except Exception:
-                pass
 
     def update_info(self):
         ws = self._connect_ws("/update")
@@ -114,10 +107,8 @@ class Client(RSAService, RichClientRenderer):
                 ):
                     try:
                         if ws:
-                            try:
+                            with contextlib.suppress(Exception):
                                 ws.close()
-                            except Exception:
-                                pass
                         ws = self._connect_ws("/update")
                         continue
                     except Exception:
@@ -126,17 +117,13 @@ class Client(RSAService, RichClientRenderer):
                         break
                 except KeyboardInterrupt:
                     self.__stop_threads = True
-                    try:
+                    with contextlib.suppress(Exception):
                         ws.send(self.close_response)
                         ws.close()
-                    except Exception:
-                        pass
                     break
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 ws.close()
-            except Exception:
-                pass
 
     def _validate_keys(self) -> None:
         self._request_key(

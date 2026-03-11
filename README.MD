@@ -2,11 +2,11 @@
 
 > Um chat de linha de comando seguro usando RSA e Fernet (criptografia end-to-end), construído sobre Sanic e WebSockets.
 
-![CI](https://github.com/dinosaurtirex/cmd-chat/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/github/license/dinosaurtirex/cmd-chat)
+![CI](https://github.com/ESousa97/cmd-chat/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/github/license/ESousa97/cmd-chat)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.10-blue)
-![Last Commit](https://img.shields.io/github/last-commit/dinosaurtirex/cmd-chat)
-![CodeFactor](https://www.codefactor.io/repository/github/dinosaurtirex/cmd-chat/badge)
+![Last Commit](https://img.shields.io/github/last-commit/ESousa97/cmd-chat)
+![CodeFactor](https://www.codefactor.io/repository/github/esousa97/cmd-chat/badge)
 
 O `cmd-chat` permite que desenvolvedores criem salas de chat através do terminal. Todas as mensagens são encriptadas usando criptografia híbrida: as chaves simétricas (Fernet) são negociadas com segurança através de chaves assimétricas (RSA 512-bit) e cada cliente exibe seu display usando a biblioteca Rich ou renderização padrão.
 
@@ -39,7 +39,7 @@ O `cmd-chat` permite que desenvolvedores criem salas de chat através do termina
 
 1. **Clone o repositório** e entre na pasta:
 ```bash
-git clone https://github.com/dinosaurtirex/cmd-chat.git
+git clone https://github.com/ESousa97/cmd-chat.git
 cd cmd-chat
 ```
 
@@ -112,10 +112,10 @@ Esteja livre para melhorar o projeto. Veja o [CONTRIBUTING.md](CONTRIBUTING.md) 
 
 ## Autor
 
-**dinosaurtirex**
+**ESousa97**
 
 * [Portfólio](https://enoquesousa.vercel.app)
-* [GitHub](https://github.com/dinosaurtirex)
+* [GitHub](https://github.com/ESousa97)
 
 ## Licença
 Este repositório é licenciado através de [MIT](LICENSE).
